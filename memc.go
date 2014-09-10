@@ -1,9 +1,11 @@
 package memc
 
 import (
+	"encoding/json"
 	"fmt"
 	"math/rand"
 	"net/http"
+	"runtime"
 	"sort"
 	"strconv"
 	"sync"
@@ -20,6 +22,7 @@ func init() {
 	http.HandleFunc("/mem", handleMem)
 	http.HandleFunc("/think", handleThink)
 	http.HandleFunc("/chan", handleChan)
+	http.HandleFunc("/stats", handleStats)
 }
 
 func handle(w http.ResponseWriter, r *http.Request) {
@@ -33,6 +36,7 @@ func handle(w http.ResponseWriter, r *http.Request) {
 	/mem?count=N – fire N concurrent memcache.Get requests
 	/think?count=N – Nk iterations of thinking
 	/chan?count=N – pass a bool through chain of N channels
+	/stats – output of runtime.ReadMemStats
 	`))
 
 }
@@ -133,6 +137,23 @@ func handleChan(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("content-type", "text/plain; charset=utf-8")
 	c.Infof("channel tunnel took %v", d)
 	fmt.Fprintf(w, "channel tunnel took %v", d)
+}
+
+func handleStats(w http.ResponseWriter, r *http.Request) {
+	c := appengine.NewContext(r)
+	sched.Check(c)
+
+	var stats runtime.MemStats
+	runtime.ReadMemStats(&stats)
+
+	b, err := json.MarshalIndent(stats, "", "\t")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("content-type", "text/plain; charset=utf-8")
+	w.Write(b)
 }
 
 type durations []time.Duration
