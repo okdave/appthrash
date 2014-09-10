@@ -1,0 +1,15 @@
+application: djd-memc
+version: 1
+runtime: go
+api_version: go1
+
+automatic_scaling:
+  max_concurrent_requests: 20
+
+handlers:
+- url: /favicon\.ico
+  static_files: favicon.ico
+  upload: favicon\.ico
+
+- url: /.*
+  script: _go_app
