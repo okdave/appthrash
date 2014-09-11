@@ -18,6 +18,7 @@ class MemPage(webapp2.RequestHandler):
         count = int(self.request.get('count'))
         if count < 1:
             self.response.write('Count must be at least 1')
+            return
 
         rpcs = []
         times = []
