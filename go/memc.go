@@ -15,11 +15,12 @@ import (
 	"appengine/memcache"
 
 	"github.com/adg/sched"
+	"github.com/mjibson/appstats"
 )
 
 func init() {
 	http.HandleFunc("/", handle)
-	http.HandleFunc("/mem", handleMem)
+	http.Handle("/mem", appstats.NewHandler(handleMem))
 	http.HandleFunc("/think", handleThink)
 	http.HandleFunc("/chan", handleChan)
 	http.HandleFunc("/stats", handleStats)
@@ -41,8 +42,7 @@ func handle(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func handleMem(w http.ResponseWriter, r *http.Request) {
-	c := appengine.NewContext(r)
+func handleMem(c appengine.Context, w http.ResponseWriter, r *http.Request) {
 	sched.Check(c)
 
 	count, err := strconv.Atoi(r.FormValue("count"))

@@ -21,25 +21,17 @@ class MemPage(webapp2.RequestHandler):
             return
 
         rpcs = []
-        times = []
         c = memcache.Client()
 
-        def make_rpc():
-            start = time.time()
-            def callback():
-                end = time.time()
-                times.append((end-start)*1000)
-            return memcache.create_rpc(deadline=30, callback=callback)
-
         for x in xrange(count):
-            rpc = make_rpc()
+            rpc = memcache.create_rpc(deadline=30)
             c.get_multi_async(["roger"], rpc=rpc)
             rpcs.append(rpc)
 
         for rpc in rpcs:
             rpc.wait()
 
-        self.response.write(times)
+        self.response.write('OK')
 
 
 application = webapp2.WSGIApplication([

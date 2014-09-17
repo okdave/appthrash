@@ -5,6 +5,8 @@ api_version: 1
 threadsafe: true
 automatic_scaling:
   max_concurrent_requests: 20
+builtins:
+- appstats: on
 
 handlers:
 - url: /favicon\.ico
