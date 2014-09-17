@@ -1,10 +1,16 @@
 application: djd-memc
-version: 1
+version: py1
 runtime: python27
 api_version: 1
 threadsafe: true
+
+instance_class: F4_1G
+
 automatic_scaling:
+  min_idle_instances: 1
+  max_idle_instances: 970
   max_concurrent_requests: 20
+
 builtins:
 - appstats: on
 

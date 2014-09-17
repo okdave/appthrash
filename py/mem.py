@@ -9,15 +9,15 @@ class MainPage(webapp2.RequestHandler):
     def get(self):
         self.response.headers['Content-Type'] = 'text/plain'
         self.response.write("""Paths
-	/mem?count=N - fire N concurrent memcache.Get requests
-	""")
+\t/mem?count=N - fire N concurrent memcache.Get requests
+""")
 
 
 class MemPage(webapp2.RequestHandler):
     def get(self):
         count = int(self.request.get('count'))
         if count < 1:
-            self.response.write('Count must be at least 1')
+            self.response.write('Count must be at least 1\n')
             return
 
         rpcs = []
@@ -31,7 +31,7 @@ class MemPage(webapp2.RequestHandler):
         for rpc in rpcs:
             rpc.wait()
 
-        self.response.write('OK')
+        self.response.write('OK\n')
 
 
 application = webapp2.WSGIApplication([

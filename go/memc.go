@@ -35,6 +35,7 @@ func handle(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("content-type", "text/plain; charset=utf-brad")
 	w.Write([]byte(`Paths:
 	/mem?count=N – fire N concurrent memcache.Get requests
+		add qps=X param to add rate limit (default 20kHz)
 	/think?count=N – Nk iterations of thinking
 	/chan?count=N – pass a bool through chain of N channels
 	/stats – output of runtime.ReadMemStats
@@ -51,13 +52,20 @@ func handleMem(c appengine.Context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	qps, err := strconv.Atoi(r.FormValue("qps"))
+	if err != nil || qps < 1 {
+		qps = 20000
+	}
+	throttle := time.Tick(time.Second / time.Duration(qps))
+
 	var wg sync.WaitGroup
 	wg.Add(count)
 	dc := make(chan time.Duration)
 	for i := 0; i < count; i++ {
+		<-throttle // rate limit
 		go func(i int) {
 			tic := time.Now()
-			_, err := memcache.Get(c, "roger")
+			_, err := memcache.Get(c, "go-william")
 			dc <- time.Now().Sub(tic)
 			if err != nil && err != memcache.ErrCacheMiss {
 				c.Errorf("Count %d: %v", i, err)
@@ -80,7 +88,7 @@ func handleMem(c appengine.Context, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("content-type", "text/plain; charset=utf-8")
 	// Dodgy quartiles are best quartiles.
 	c.Infof("count %d; quartiles [%v, %v, %v, %v, %v]", count, alld[0], alld[count/4], alld[count/2], alld[3*count/4], alld[count-1])
-	fmt.Fprintf(w, "count %d; quartiles [%v, %v, %v, %v, %v]", count, alld[0], alld[count/4], alld[count/2], alld[3*count/4], alld[count-1])
+	fmt.Fprintf(w, "count %d; qps %d; quartiles [%v, %v, %v, %v, %v]\n", count, qps, alld[0], alld[count/4], alld[count/2], alld[3*count/4], alld[count-1])
 }
 
 func handleThink(w http.ResponseWriter, r *http.Request) {
@@ -105,7 +113,7 @@ func handleThink(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("content-type", "text/plain; charset=utf-8")
 	c.Infof("thought for %v", d)
-	fmt.Fprintf(w, "thought for %v", d)
+	fmt.Fprintf(w, "thought for %v\n", d)
 }
 
 func handleChan(w http.ResponseWriter, r *http.Request) {
@@ -136,7 +144,7 @@ func handleChan(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("content-type", "text/plain; charset=utf-8")
 	c.Infof("channel tunnel took %v", d)
-	fmt.Fprintf(w, "channel tunnel took %v", d)
+	fmt.Fprintf(w, "channel tunnel took %v\n", d)
 }
 
 func handleStats(w http.ResponseWriter, r *http.Request) {
